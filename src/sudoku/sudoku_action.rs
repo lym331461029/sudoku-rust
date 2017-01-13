@@ -1,6 +1,10 @@
 pub use rustc_serialize::json;
 use std::fmt;
 use sudoku_elem::*;
+use std::boxed::Box;
+use std::collections::HashMap;
+use std::borrow::BorrowMut;
+use std::borrow::Borrow;
 
 const Start1 : usize = 1;
 const End1: usize = 3;
@@ -8,9 +12,16 @@ const Start2: usize = 5;
 const End2: usize = 7;
 
 #[derive(Copy,Clone,RustcDecodable,RustcEncodable)]
+struct Point {
+    x: usize,
+    y: usize,
+}
+
+#[derive(Clone,RustcDecodable,RustcEncodable)]
 pub struct Sudoku {
     data :[[SudokuElem;9];9],
     st:  char,
+    area_map: Box<HashMap<u8,Vec<Point>>>,
     //area_map: Option<HashMap<u8,Vec<Point>>>,
 }
 
@@ -30,20 +41,48 @@ impl Sudoku {
         }
 
         let intermediate_ : Intermediate = json::decode(jsonstr).unwrap();
+
+        let mut rel = Sudoku{
+            data:[[SudokuElem::new(0u8);9];9],
+            st: intermediate_.st,
+            area_map: Box::new(HashMap::<u8,Vec<Point>>::new()),
+        };
+        rel.st = intermediate_.st;
+
         if intermediate_.st != 'A' {
-            return Self::from_json(jsonstr);
-        } else {
-            let mut rel = Sudoku{
-                data:[[SudokuElem::new(0u8);9];9],
-                st: intermediate_.st,
-            };
+            //return Self::from_json(jsonstr);
             for i in 0..9 {
                 for j in 0..9 {
-
+                    let value = intermediate_.data[i][j];
+                    if value == 0 {
+                        rel.data[i][j].push_all_to_cache();
+                    } else {
+                        rel.data[i][j].set_value(value);
+                    }
                 }
             }
-            return rel;
+        } else {
+
+            for i in 0..9 {
+                for j in 0..9 {
+                    let area_no = intermediate_.data[i][j] / 10;
+                    rel.data[i][j].set_area(area_no);
+
+                    let value = intermediate_.data[i][j] % 10;
+                    if value == 0 {
+                        rel.data[i][j].push_all_to_cache();
+                    } else {
+                        rel.data[i][j].set_value(value);
+                    }
+
+                    let mut_ref: &mut HashMap<u8,Vec<Point>> = rel.area_map.borrow_mut();
+                    if let Some(vec_ref) = mut_ref.get_mut(&area_no) {
+                        vec_ref.push(Point{x:i,y:j,});
+                    }
+                }
+            }
         }
+        rel
     }
 
     fn nine_restrict_impl(&mut self, xs :usize, xe:usize, ys:usize, ye: usize, x:usize,y:usize) {
@@ -147,6 +186,17 @@ impl Sudoku {
             i += 3;
         }
         self.data[x][y].cache_num()
+    }
+
+    fn area_restric(&mut self, x:usize,y:usize) -> u8 {
+        let area_no = self.data[x][y].get_area();
+        let area_map_ref: &HashMap<u8,Vec<Point>> = self.area_map.borrow();
+
+        if let Some(vec_ref) = area_map_ref.get(&area_no) {
+            for v in vec_ref {
+
+            }
+        }
     }
 
     fn get_candidate_num(&self,x:usize,y:usize) -> u8 {

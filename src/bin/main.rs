@@ -9,7 +9,7 @@ use std::fs::File;
 use std::time::{SystemTime};
 
 fn main() {
-    let f = File::open("/Users/lym/rustPro/sudoku/config/Input.json").unwrap();
+    let f = File::open("/Users/lym/rustPro/sudoku-rust/config/Input.json").unwrap();
     let mut br = BufReader::new(f);
     
     let mut s = String::new();
