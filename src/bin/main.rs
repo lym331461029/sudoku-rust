@@ -9,7 +9,7 @@ use std::fs::File;
 use std::time::{SystemTime};
 
 fn main() {
-    let f = File::open("/Users/lym/rustPro/sudoku-rust/config/Input.json").unwrap();
+    let f = File::open("D:\\rustPro\\sudoku-rust\\config\\Input.json").unwrap();
     let mut br = BufReader::new(f);
     
     let mut s = String::new();
@@ -18,7 +18,7 @@ fn main() {
     let mut sdk = Sudoku::from_json_new(&s);
 
     let now = SystemTime::now();
-    for x in 0..1 {
+    for x in 0..10000 {
         let mut tp = sdk.clone();
         tp.generate_sudoku();
     }

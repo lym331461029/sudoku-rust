@@ -11,7 +11,7 @@ const End1: usize = 3;
 const Start2: usize = 5;
 const End2: usize = 7;
 
-#[derive(Copy,Clone,RustcDecodable,RustcEncodable)]
+#[derive(Copy,Clone,RustcDecodable,RustcEncodable,Debug)]
 struct Point {
     x: usize,
     y: usize,
@@ -22,7 +22,6 @@ pub struct Sudoku {
     data :[[SudokuElem;9];9],
     st:  char,
     area_map: Box<HashMap<u8,Vec<Point>>>,
-    //area_map: Option<HashMap<u8,Vec<Point>>>,
 }
 
 impl Sudoku {
@@ -50,7 +49,6 @@ impl Sudoku {
         rel.st = intermediate_.st;
 
         if intermediate_.st != 'A' {
-            //return Self::from_json(jsonstr);
             for i in 0..9 {
                 for j in 0..9 {
                     let value = intermediate_.data[i][j];
@@ -62,7 +60,6 @@ impl Sudoku {
                 }
             }
         } else {
-
             for i in 0..9 {
                 for j in 0..9 {
                     let area_no = intermediate_.data[i][j] / 10;
@@ -74,10 +71,17 @@ impl Sudoku {
                     } else {
                         rel.data[i][j].set_value(value);
                     }
-
-                    let mut_ref: &mut HashMap<u8,Vec<Point>> = rel.area_map.borrow_mut();
-                    if let Some(vec_ref) = mut_ref.get_mut(&area_no) {
-                        vec_ref.push(Point{x:i,y:j,});
+                    {
+                        let mut_ref: &mut HashMap<u8,Vec<Point>> = rel.area_map.as_mut();
+                        if let Some(vec_ref) = mut_ref.get_mut(&area_no) {
+                            vec_ref.push(Point{x:i,y:j,});
+                        }
+                    }
+                    {
+                        let mut_ref: &mut HashMap<u8,Vec<Point>> = rel.area_map.as_mut();
+                        if let None = mut_ref.get_mut(&area_no) {
+                            mut_ref.insert(area_no,vec![Point{x:i,y:j}]);
+                        }
                     }
                 }
             }
@@ -188,15 +192,17 @@ impl Sudoku {
         self.data[x][y].cache_num()
     }
 
-    fn area_restric(&mut self, x:usize,y:usize) -> u8 {
+    fn area_restrict(&mut self, x:usize,y:usize) -> u8 {
         let area_no = self.data[x][y].get_area();
-        let area_map_ref: &HashMap<u8,Vec<Point>> = self.area_map.borrow();
-
-        if let Some(vec_ref) = area_map_ref.get(&area_no) {
-            for v in vec_ref {
-
+        if let Some(area_points) = self.area_map.as_ref().get(&area_no) {
+            for p in area_points.iter() {
+                let value = self.data[p.x][p.y].get_value();
+                if value > 0 {
+                    self.data[x][y].remove_from_cache(value);
+                }
             }
         }
+        self.data[x][y].cache_num()
     }
 
     fn get_candidate_num(&self,x:usize,y:usize) -> u8 {
@@ -242,6 +248,10 @@ impl Sudoku {
                             tp_num = self.color_restrict(i,j);
                         }
 
+                        if tp_num > 0 && self.st == 'A' {
+                            tp_num = self.area_restrict(i,j);
+                        }
+
                         if tp_num == 0 {
                             return false;
                         }
@@ -280,7 +290,7 @@ impl Sudoku {
                 self.data[MinX][MinY].pop_cache_front();
             }
         } else if MaxC == 1 && MinC == 9 {
-            println!("{}",*self);
+            //println!("{}",*self);
             return true
         }
         return false
