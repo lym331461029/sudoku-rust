@@ -18,9 +18,14 @@ fn main() {
     let mut sdk = Sudoku::from_json_new(&s);
 
     let now = SystemTime::now();
-    for x in 0..10000 {
+    let mut rel_vec = Vec::new();
+    for x in 0..1 {
         let mut tp = sdk.clone();
-        tp.generate_sudoku();
+        tp.generate_sudoku(&mut rel_vec);
+    }
+
+    for r in rel_vec {
+        println!("{}",r);
     }
     let du = now.elapsed().unwrap();
     println!("{:?}",du);

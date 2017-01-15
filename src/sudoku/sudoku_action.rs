@@ -17,7 +17,7 @@ struct Point {
     y: usize,
 }
 
-#[derive(Clone,RustcDecodable,RustcEncodable)]
+#[derive(Clone,RustcDecodable,RustcEncodable,Debug)]
 pub struct Sudoku {
     data :[[SudokuElem;9];9],
     st:  char,
@@ -25,12 +25,6 @@ pub struct Sudoku {
 }
 
 impl Sudoku {
-
-    pub fn from_json(jsonstr : &str) -> Self {
-        let sdk : Sudoku = json::decode(jsonstr).unwrap();
-        sdk
-    }
-
     pub fn from_json_new(jsonstr: &str) -> Self {
 
         #[derive(Copy,Clone,RustcDecodable)]
@@ -212,7 +206,7 @@ impl Sudoku {
         self.data[x][y].cache_num()
     }
 
-    pub fn generate_sudoku(&mut self) -> bool {
+    pub fn generate_sudoku(&mut self,rel_array : &mut Vec<Self>) -> bool {
         let mut MinX : usize = 0;
         let mut MinY : usize = 0;
         let mut MinC : u8 = 0u8;
@@ -286,11 +280,12 @@ impl Sudoku {
                 let value = tp_sudoku.data[MinX][MinY].pop_cache_front();
                 tp_sudoku.data[MinX][MinY].set_value(value);
                 tp_sudoku.data[MinX][MinY].remove_all_cache();
-                tp_sudoku.generate_sudoku();
+                tp_sudoku.generate_sudoku(rel_array);
                 self.data[MinX][MinY].pop_cache_front();
             }
         } else if MaxC == 1 && MinC == 9 {
             //println!("{}",*self);
+            rel_array.push(self.clone());
             return true
         }
         return false
