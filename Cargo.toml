@@ -12,8 +12,15 @@ name="sudoku"
 path="src/bin/main.rs"
 doc=false
 
+[[bin]]
+name="sudoku_web_test"
+path="src/web/main.rs"
+
 [profile.release]
 debug=true
 
 [dependencies]
 rustc-serialize = "*"
+iron = "*"
+time = "*"
+router = "*"
